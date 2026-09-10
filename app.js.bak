@@ -1,0 +1,128 @@
+const photos = window.PHOTOS || [];
+const $ = (s, root=document) => root.querySelector(s);
+const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+const esc = (s='') => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const ASSET = './';
+
+// Visual category map: use the recovered record genre, not the old misleading titles.
+const categoryFor = p => {
+  const g = String(p?.genre || '').toLowerCase();
+  if (g === 'product') return 'PRODUCT';
+  if (g === 'fashion') return 'FASHION';
+  if (g === 'portrait') return 'PORTRAIT';
+  if (g === 'architecture') return 'ARCHITECTURE';
+  if (g === 'street') return 'STREET';
+  if (g === 'wedding') return 'WEDDING';
+  return 'OTHER';
+};
+const cats = ['ALL','FASHION','PRODUCT','PORTRAIT','ARCHITECTURE','STREET','WEDDING'];
+
+const work = [
+  {title:"Kellogg's Froot Loops — Cinematic Reel",type:'AI / FILM',group:'ai',thumb:'kelloggs.jpg',orientation:'landscape',url:'https://drive.google.com/file/d/1RrjhbxmL0vhKhIDnj0AT4u-XoCfrDBoJ/view?usp=drive_link'},
+  {title:'Adidas — UGC AI',type:'AI / FILM',group:'ai',thumb:'adidas.webp',orientation:'portrait',url:'https://drive.google.com/file/d/1e6fFmrJSNP4tuRK1VKXkjrSyiuBIMQb0/view?usp=drive_link'},
+  {title:'Hand Fan — AI Reel',type:'AI / FILM',group:'ai',thumb:'handfan.webp',orientation:'portrait',url:'https://drive.google.com/file/d/14Rw0wM22r4CwfuToBgvl_KAyTjdiHg5d/view?usp=drive_link'},
+  {title:'NIVEA — AI Product Film',type:'AI / FILM',group:'ai',thumb:null,orientation:'landscape',url:'https://drive.google.com/file/d/1tVyyb6ryYyQKy1PKZHyn2jCEGE0YmrA/view?usp=drive_link'},
+  {title:'Dilkush Sweets — Concept Film',type:'AI / CONCEPT',group:'ai',thumb:'dilkush.webp',orientation:'landscape',url:'https://drive.google.com/file/d/1p5zSR3sZGv_PWbBOak6VM47j6u_SsqiZ/view?usp=drive_link'},
+  {title:'Sparrow Interactive — AI Reel',type:'AI / FILM',group:'ai',thumb:'sparrow.webp',orientation:'landscape',url:'https://drive.google.com/file/d/1xy2Or2QooJ5Ef2AMDGEsdJNvwLaBQNtB/view?usp=drive_link'},
+  {title:'Ambience Mall, Gurugram',type:'SHOT + EDIT',group:'film',thumb:'ambience.webp',orientation:'portrait',url:'https://drive.google.com/file/d/193-xljPf789ig34KLzgfwr_K_v09AhwX/view?usp=drive_link'},
+  {title:'SNITCH — Social Reel',type:'SHOT + EDIT',group:'film',thumb:'snitch.webp',orientation:'portrait',url:'https://drive.google.com/file/d/1WDdeSeoaOr5dyQZs0hxv6rFFtvUz0Yq9/view?usp=drive_link'},
+  {title:'BMW — Walkinn',type:'SHOT + EDIT',group:'film',thumb:'bmw.webp',orientation:'portrait',url:'https://drive.google.com/file/d/1AScGxXUNVxqFLwjjg71D_7j8t7Gy6L4z/view?usp=drive_link'},
+  {title:'High-End Jewellery Shoot',type:'SHOT + EDIT',group:'film',thumb:'jewellery.webp',orientation:'portrait',url:'https://drive.google.com/file/d/1ByVNHlo42FllklM9BwkYUgX2tEwJXX8V/view?usp=drive_link'},
+  {title:'Perfora — Assignment',type:'SHOT + EDIT',group:'film',thumb:'perfora.webp',orientation:'portrait',url:'https://drive.google.com/file/d/14tekMS6D0SwAUXjSjibh2BEvUobiHWNK/view?usp=drive_link'},
+  {title:'Mission Buniyaad / Super 100 — Documentary',type:'DOCUMENTARY',group:'documentary',thumb:'mission-buniyaad.webp',orientation:'landscape',url:'https://drive.google.com/file/d/1FtVxHusyyztcPD9SUoNghM5wYAd3Pkn5/view?usp=drive_link'},
+  {title:'Paytm Brand Reels',type:'BRAND · FREELANCE',group:'brand',thumb:'paytm-reels.png',orientation:'landscape',links:[
+    ['Reel 01','https://www.instagram.com/reel/DNFT-74ysrK/?igsh=bXltcGg0dGlkZjUz'],
+    ['Reel 02','https://www.instagram.com/reel/DM4Yj7fORyq/?igsh=MWJzYmJhanFnbGV4bA==']
+  ]},
+  {title:'Podcasts',type:'DOCUMENTARY · LONG-FORM',group:'documentary',thumb:'podcasts.png',orientation:'landscape',links:[
+    ['Episode 01','https://youtu.be/cXBZVjGKsnI?si=g5YOHZXmFfgZImHO'],
+    ['Episode 02','https://youtu.be/nZwt_Ze5sCQ?si=Oa6A5FfKjH16NN0t'],
+    ['Episode 03','https://youtu.be/xpyM1CKo9Nc?si=W_gaXscWyY4xjBbh'],
+    ['Episode 04','https://youtu.be/DMuhWeV6-vc?si=9Z9peVlgRrwpgvqY']
+  ]},
+  {title:'Interviews',type:'DOCUMENTARY · INTERVIEWS',group:'documentary',thumb:'interviews.png',orientation:'landscape',links:[
+    ['Interview 01','https://youtu.be/ojCQgijsrJw?si=mOFAOVg-gdC3BhK0'],
+    ['Interview 02','https://youtu.be/5A_Kt6Cynzs?si=Or3utHHBChJsnWmL'],
+    ['Interview 03','https://youtu.be/Cyz2wp1yNNE?si=OxJC6E-Kjcjcb6Mo'],
+    ['Interview 04','https://youtu.be/eUww6dkz-v4?si=NhjEvyTXpiz4Anqz']
+  ]},
+  {title:'Shorgull',type:'SHORT FILM · NARRATIVE',group:'documentary',thumb:'shorgull.png',orientation:'landscape',links:[
+    ['Watch Film','https://drive.google.com/file/d/1u8BU5pUttfbFXAaESlhaFhXBDoc7AR0x/view?usp=drive_link']
+  ]}
+];
+
+const brands = [
+  {name:'Galleria VSB',kind:'Art gallery · Visual identity · Film · Photography',thumb:'galleria-vsb.png',links:[
+    ['Reel 01','https://www.instagram.com/reel/DVD3nl2Egg8/?igsh=dWgza3d1YWd2YTR3'],
+    ['Reel 02','https://www.instagram.com/reel/DUxMBNEjNe5/?igsh=M2FmOWh2ZXVtN2Rj']
+  ],hiddenCount:5},
+  {name:'White & Yellow',kind:'Luxury jewellery · Film · Photography',thumb:'white-and-yellow.png',links:[
+    ['Reel 01','https://www.instagram.com/reel/DU8IVBdiQGK/?igsh=MTVueTNoOHI3cXhxdA=='],
+    ['Reel 02','https://www.instagram.com/reel/DUYF5A0iTJC/?igsh=N2s4bnN1Mm80YWFz']
+  ],hiddenCount:2}
+];
+
+function nav(active){
+  return `<header class="nav"><a class="wordmark" href="#/">SHIVAM<span>GUPTA</span></a><nav id="navLinks">${[['/','Home'],['/photography','Photography'],['/film','Film'],['/about','About'],['/contact','Contact']].map(([p,l])=>`<a class="${active===p?'active':''}" href="#${p}">${l}</a>`).join('')}</nav><button class="menu" id="menu" aria-label="Open menu"><span></span><span></span></button></header>`;
+}
+function footer(){return `<footer><span>SHIVAM GUPTA / IMAGE MAKER</span><span>© 2026</span></footer>`;}
+function photoImg(p, extra=''){return `<img class="${extra}" loading="lazy" decoding="async" src="${ASSET}${esc(p.file)}" alt="${esc(p.title)}">`;}
+function thumbImg(w){
+  return w.thumb
+    ? `<img loading="lazy" decoding="async" src="${ASSET}thumbnails/${w.thumb}" alt="${esc(w.title)}">`
+    : `<div class="thumbPending"><span>THUMBNAIL<br>PENDING</span></div>`;
+}
+function workLinks(w){
+  if(w.url) return `<a class="watchLink" href="${w.url}" target="_blank" rel="noopener noreferrer">Open film ↗</a>`;
+  return (w.links||[]).slice(0,4).map(([label,url])=>`<a class="watchLink" href="${url}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`).join('');
+}
+function workCard(w){return `<article class="workCard ${w.orientation||'landscape'}"><div class="workThumb">${thumbImg(w)}<span class="play">↗</span></div><div class="workMeta"><span>${w.type}</span><h3>${esc(w.title)}</h3><div class="workLinks">${workLinks(w)}</div></div></article>`;}
+
+// Carefully selected from the visual contact sheets rather than arbitrary IDs.
+const selectedIds = [40,44,34,50,75,80,89,106];
+function home(){
+  const hero = photos.find(p=>p.id===40) || photos[0];
+  const featured = selectedIds.map(id=>photos.find(p=>p.id===id)).filter(Boolean);
+  const filmFeatured = [work[0],work[1],work[8]];
+  return `<main>
+    <section class="hero">
+      <div class="heroCopy"><p class="eyebrow">CINEMATOGRAPHER · PHOTOGRAPHER · CREATIVE DIRECTOR</p><h1>Making images<br><em>with intent.</em></h1><p class="intro">Commercial films, photography, visual direction and AI-led image making — built around the idea first.</p><a class="textLink" href="#/photography">Enter the work <b>↗</b></a></div>
+      <div class="heroImage">${photoImg(hero)}<div class="heroLabel"><span>SELECTED FRAME</span><strong>${String(hero.id).padStart(3,'0')}</strong></div></div>
+    </section>
+    <section class="introBand"><div class="sectionNo">01 /</div><div><p class="eyebrow">THE PRACTICE</p><h2>Camera first.<br><em>Technology second.</em></h2><p class="bodyCopy">I work across photography, cinematography, editing and generative production. The medium changes; the obsession with the image doesn't.</p></div><div class="miniSignature">SHIVAM<br>GUPTA</div></section>
+    <section class="photoPreview"><div class="sectionHead"><div><p class="eyebrow">02 — PHOTOGRAPHY</p><h2>Selected frames</h2></div><a class="textLink" href="#/photography">View all 118 <b>↗</b></a></div><div class="editorialGrid">${featured.map((p,i)=>`<a href="#/photography" class="photoCard pc${i}">${photoImg(p)}<div><span>${categoryFor(p)}</span><strong>${String(p.id).padStart(3,'0')}</strong></div></a>`).join('')}</div></section>
+    <section class="filmPreview"><div class="sectionHead"><div><p class="eyebrow">03 — MOVING IMAGE</p><h2>Film & AI</h2></div><a class="textLink" href="#/film">See the reel <b>↗</b></a></div><div class="filmGrid">${filmFeatured.map(workCard).join('')}</div></section>
+    <section class="brandWorlds"><div><p class="eyebrow">04 — BRAND WORLDS</p><h2>Selected brand<br><em>stories.</em></h2></div><div class="brandStack">${brands.map((b,i)=>`<a class="brandRow" href="#/film"><span>0${i+1}</span><div><strong>${b.name}</strong><small>${b.kind}</small></div><b>↗</b></a>`).join('')}</div></section>
+    <section class="aboutTease"><div class="aboutTeasePhoto"><img src="./about-shivam.jpg" alt="Shivam Gupta behind the camera" loading="lazy"></div><div><p class="eyebrow">05 — BEHIND THE CAMERA</p><h2>Not just the<br><em>final frame.</em></h2><p class="bodyCopy">A cinematographer and photographer who likes to stay close to the making — from the first reference to the final grade.</p><a class="textLink" href="#/about">About Shivam <b>↗</b></a></div></section>
+    <section class="contactBand"><p class="eyebrow">06 — AVAILABLE FOR SELECT PROJECTS</p><h2>Let's make something<br><em>worth looking at.</em></h2><a class="pill" href="#/contact">Start a conversation ↗</a></section>
+  </main>`;
+}
+
+function photography(){return `<main class="page photographyPage"><section class="pageIntro photoIntro"><div><p class="eyebrow">PHOTOGRAPHY / 118 FRAMES</p><h1>A visual archive,<br><em>without the noise.</em></h1></div><div><p>Commercial, fashion, portrait, product, architecture, street and wedding work — presented as an image archive rather than a database.</p><p class="tinyNote">Recovered from the original library. Full-resolution masters remain separate from the website.</p></div></section><div class="filters" id="filters">${cats.map(c=>`<button data-cat="${c}" class="${c==='ALL'?'selected':''}">${c}</button>`).join('')}</div><section class="archiveGrid" id="archive"></section><div class="lightbox" id="lightbox" hidden></div></main>`;}
+
+function renderArchive(cat='ALL'){
+  const list=photos.filter(p=>cat==='ALL'||categoryFor(p)===cat);
+  const archive=$('#archive');
+  if(!archive) return;
+  archive.innerHTML=list.map((p,i)=>`<button class="archiveCard" data-id="${p.id}" style="--delay:${Math.min(i,20)*12}ms"><span class="archiveImage">${photoImg(p)}</span><span class="archiveMeta"><b>${String(p.id).padStart(3,'0')}</b><span>${categoryFor(p)}</span></span></button>`).join('');
+  $$('.archiveCard',archive).forEach(b=>b.addEventListener('click',()=>openLight(Number(b.dataset.id),list)));
+}
+function openLight(id,list){
+  let i=list.findIndex(p=>p.id===id); const lb=$('#lightbox'); if(!lb)return; lb.hidden=false; document.body.classList.add('modalOpen');
+  const draw=()=>{const p=list[i];lb.innerHTML=`<button class="lbClose" aria-label="Close">×</button><button class="lbPrev" aria-label="Previous">‹</button><div class="lbInner">${photoImg(p,'lbImage')}<div><span>${String(p.id).padStart(3,'0')} · ${categoryFor(p)}</span><strong>${esc(p.title)}</strong></div></div><button class="lbNext" aria-label="Next">›</button>`;lb.onclick=e=>{if(e.target===lb)close()};$('.lbClose',lb).onclick=close;$('.lbPrev',lb).onclick=()=>{i=(i-1+list.length)%list.length;draw()};$('.lbNext',lb).onclick=()=>{i=(i+1)%list.length;draw()};};
+  const close=()=>{lb.hidden=true;document.body.classList.remove('modalOpen')}; draw();
+}
+
+function brandCard(b,i){return `<article class="brandCard"><div class="brandVisual"><img src="${ASSET}thumbnails/${b.thumb}" alt="${esc(b.name)}"><span class="brandNo">0${i+1}</span></div><div class="brandCardBody"><span>${esc(b.kind)}</span><h3>${esc(b.name)}</h3><div class="brandLinks">${b.links.map(([label,url])=>`<a href="${url}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`).join('')}<small>${b.hiddenCount} more reels retained in the archive</small></div></div></article>`;}
+function film(){return `<main class="page filmPage"><section class="pageIntro"><p class="eyebrow">MOVING IMAGE</p><h1>Film, edit &<br><em>AI experiments.</em></h1><p>Commercial films, generative work, editing, documentary and selected client stories. Thumbnails are kept faithful to the supplied frame orientation.</p></section><div class="filters filmFilters" id="filmFilters"><button class="selected" data-tab="all">ALL</button><button data-tab="ai">AI / GENERATIVE</button><button data-tab="film">SHOT + EDIT</button><button data-tab="brand">BRAND / CLIENT</button><button data-tab="documentary">DOCUMENTARY</button></div><div class="workGrid" id="workGrid">${work.map(workCard).join('')}</div><section class="brandSplit"><div><p class="eyebrow">BRAND WORLDS</p><h2>White & Yellow<br><em>and Galleria VSB.</em></h2><p class="bodyCopy">Kept separate as two client worlds. Only selected reels are surfaced here so the portfolio stays curated; the remaining links are retained in the project data.</p></div><div class="brandList">${brands.map(brandCard).join('')}</div></section></main>`;}
+
+function about(){return `<main class="page"><section class="aboutHero"><div class="aboutPortrait"><img src="./about-shivam.jpg" alt="Shivam Gupta with camera"></div><div class="aboutTitle"><p class="eyebrow">ABOUT / BEHIND THE CAMERA</p><h1>Shivam<br><em>Gupta.</em></h1><p class="portraitCaption">Cinematographer · Photographer · Creative Director</p></div><div class="aboutText"><p class="lead">I build visual stories across commercial, editorial, documentary and AI-led production.</p><p>I like images that feel considered without feeling overworked. My process moves from concept to camera to edit, with generative tools added when they genuinely make the idea stronger.</p><p>Based in India. Available for select productions, campaigns, visual identities and creative collaborations.</p></div></section><section class="aboutDetails"><div><span>01</span><h3>CAMERA</h3><p>Commercial cinematography · Fashion · Product · Documentary</p></div><div><span>02</span><h3>PHOTOGRAPHY</h3><p>Editorial · Portrait · Product · Fashion · Visual stories</p></div><div><span>03</span><h3>GENERATIVE</h3><p>AI film · Concept development · Image generation · Creative workflows</p></div></section></main>`;}
+function contact(){return `<main class="page contactPage"><p class="eyebrow">CONTACT</p><h1>Have a project<br><em>in mind?</em></h1><p class="contactIntro">Films, campaigns, photography, AI-led production or creative direction.</p><a class="email" href="mailto:hello@shivamgupta.in">hello@shivamgupta.in ↗</a><div class="socials"><a href="#">Instagram</a><a href="#">LinkedIn</a><a href="#/film">Work reels</a></div></main>`;}
+
+function bind(){
+  const menu=$('#menu'); if(menu) menu.onclick=()=>$('#navLinks').classList.toggle('mobileOpen');
+  const filters=$('#filters'); if(filters){$$('button',filters).forEach(b=>b.onclick=()=>{$$('button',filters).forEach(x=>x.classList.remove('selected'));b.classList.add('selected');renderArchive(b.dataset.cat)});renderArchive();}
+  const wg=$('#workGrid'); if(wg){$$('#filmFilters button').forEach(b=>b.onclick=()=>{$$('#filmFilters button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');wg.innerHTML=work.filter(w=>b.dataset.tab==='all'||w.group===b.dataset.tab).map(workCard).join('')});}
+}
+function render(){const path=location.hash.slice(1)||'/';const body=path==='/photography'?photography():path==='/film'?film():path==='/about'?about():path==='/contact'?contact():home();$('#app').innerHTML=nav(path)+body+footer();bind();window.scrollTo({top:0,behavior:'instant'});}
+addEventListener('hashchange',render); render();

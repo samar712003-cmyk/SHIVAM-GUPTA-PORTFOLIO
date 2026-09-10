@@ -1,0 +1,1 @@
+{"name":"shivam-gupta-portfolio","private":true,"version":"1.0.0","scripts":{"dev":"python3 -m http.server 5173","preview":"python3 -m http.server 5173"}}
